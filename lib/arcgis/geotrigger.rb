@@ -29,7 +29,7 @@ module ArcGIS
         raise GeotriggerError.new r.body unless r.status == 200
         h = JSON.parse r.body
         if h['error']
-          ge = GeotriggerError.new
+          ge = GeotriggerError.new h['error']['message']
           ge.code = h['error']['code']
           ge.headers = h['error']['headers']
           ge.message = h['error']['message']
@@ -44,11 +44,49 @@ module ArcGIS
     end
 
     class Model
+
       extend Forwardable
       def_delegator :@session, :post
+
+      attr_accessor :data
+
       def initialize opts = {}
         @session = opts[:session] || Session.new(opts)
       end
+
+      def self.from_api data, session
+        i = self.new session: session
+        i.data = data
+        i
+      end
+
+      def post_list models, params = {}, default_params = {}
+        model = models.sub /s$/, ''
+        params = default_params.merge params
+        post(model + '/list', params)[models].map do |data|
+          Geotrigger.const_get(model.capitalize).from_api data, @session
+        end
+      end
+
+      def method_missing meth, *args
+        meth_s = meth.to_s
+        if meth_s =~ /=$/ and args.length == 1
+          key = meth_s.sub(/=$/,'').camelcase
+          if @data and @data.key? key
+            @data[key] = args[0]
+          else
+            super meth, *args
+          end
+        else
+          key = meth_s.camelcase
+          if @data and @data.key? key
+            @data[key]
+          else
+            super meth, *args
+          end
+        end
+      end
+
     end
 
     class AGOSession
@@ -89,7 +127,7 @@ module ArcGIS
         end
 
       end
-      
+
       class Application
         include ExpirySet
         extend ::Forwardable
@@ -111,7 +149,7 @@ module ArcGIS
 
         def fetch_access_token
           wrap_token_retrieval do
-            @ago_data = hc :post, 'oauth2/token', 
+            @ago_data = hc :post, 'oauth2/token',
               client_id: @client_id,
               client_secret: @client_secret,
               grant_type: 'client_credentials'
@@ -136,7 +174,7 @@ module ArcGIS
         end
 
         def access_token
-          if @ago_data.nil? 
+          if @ago_data.nil?
             if @refresh_token.nil?
               register
             else
@@ -185,6 +223,7 @@ module ArcGIS
 end
 
 begin
+  require 'ext/string'
   require 'arcgis/geotrigger/application'
   require 'arcgis/geotrigger/device'
   require 'arcgis/geotrigger/tag'

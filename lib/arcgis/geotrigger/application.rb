@@ -3,24 +3,24 @@ module ArcGIS
 
     class Application < Model
 
-      def permissions 
-        @session.post 'application/permissions'
+      def permissions
+        post 'application/permissions'
       end
 
       def permissions= perms
-        @session.post 'application/permissions/update', perms
-      end
-
-      def triggers
+        post 'application/permissions/update', perms
       end
 
       def devices params = {}
-        @session.post('device/list', params)['devices'].map do |d|
-          Device.from_api d, @session
-        end
+        post_list 'devices', params
       end
 
-      def tags
+      def tags params = {}
+        post_list 'tags', params
+      end
+
+      def triggers params = {}
+        post_list 'triggers', params
       end
 
     end
