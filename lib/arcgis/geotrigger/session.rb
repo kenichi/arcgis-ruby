@@ -7,15 +7,21 @@ module ArcGIS
 
       BASE_URL = 'https://geotrigger.arcgis.com/%s'.freeze
 
+      attr_writer :access_token
+
       def initialize opts = {}
         @ago = AGO::Session.new opts
         @hc = HTTPClient.new
       end
 
+      def access_token
+        @access_token || @ago.access_token
+      end
+
       def headers
         {
           'Content-Type' => 'application/json',
-          'Authorization' => "Bearer #{@ago.access_token}"
+          'Authorization' => "Bearer #{access_token}"
         }
       end
 

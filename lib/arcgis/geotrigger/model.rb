@@ -9,6 +9,7 @@ module ArcGIS
       def_delegator :@session, :post
 
       attr_accessor :data
+      attr_reader :session
 
       def self.from_api data, session
         i = self.new session: session
@@ -48,6 +49,14 @@ module ArcGIS
           else
             super meth, *args
           end
+        end
+      end
+
+      def == obj
+        if Model === obj
+          self.data == obj.data
+        else
+          false
         end
       end
 

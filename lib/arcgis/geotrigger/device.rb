@@ -4,6 +4,13 @@ module ArcGIS
     class Device < Model
       include Taggable
 
+      def initialize opts = {}
+        super opts
+        if opts[:device_id] and @data.nil?
+          grok_self_from post('device/list', deviceIds: opts[:device_id]), opts[:device_id]
+        end
+      end
+
       def default_tag
         'device:%s' % triggerId
       end
@@ -21,12 +28,15 @@ module ArcGIS
         post_data.delete 'tags'
         post_data.delete 'lastSeen'
 
-        data = post 'device/update', post_data
-        @data = data['devices'].select {|t| t['deviceId'] == @data['deviceId']}.first
+        grok_self_from post 'device/update', post_data
         @modified = false
         self
       end
       alias_method :save, :post_update
+
+      def grok_self_from data, id = nil
+        @data = data['devices'].select {|t| t['deviceId'] == (id || @data['deviceId'])}.first
+      end
 
     end
 
