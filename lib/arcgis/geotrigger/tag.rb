@@ -11,11 +11,11 @@ module ArcGIS
       end
 
       def triggers params = {}
-        post_list 'triggers', params, tag: name
+        post_list 'triggers', params, tags: name
       end
 
       def devices params = {}
-        post_list 'devices', params, tag: name
+        post_list 'devices', params, tags: name
       end
 
       def post_update
