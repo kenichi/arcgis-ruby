@@ -2,8 +2,6 @@ require 'forwardable'
 require 'httpclient'; class HTTPClient; def inspect; to_s; end; end
 require 'json'
 
-require 'pry'
-
 module ArcGIS
   module Geotrigger
     class AGOError < StandardError; end

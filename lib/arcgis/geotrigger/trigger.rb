@@ -19,12 +19,7 @@ module ArcGIS
         raise StateError.new 'not modified' unless @modified
 
         post_data = @data.dup
-        case @session.type
-        when :application
-          post_data['triggerIds'] = post_data.delete 'triggerId'
-        when :device
-          post_data.delete 'triggerId'
-        end
+        post_data['triggerIds'] = post_data.delete 'triggerId'
         post_data.delete 'tags'
 
         grok_self_from post 'trigger/update', post_data
