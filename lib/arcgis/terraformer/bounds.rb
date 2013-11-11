@@ -2,7 +2,7 @@ module ArcGIS
   module Terraformer
     module Bounds
 
-      def calculate_bounds geojson = nil
+      def bounds geojson = nil
 
         geojson = JSON.parse geojson if String === geojson
         unless Hash === geojson
@@ -14,21 +14,21 @@ module ArcGIS
           [ geojson['coordinates'][0], geojson['coordinates'][1],
             geojson['coordinates'][0], geojson['coordinates'][1] ]
         when 'MultiPoint'
-          calculate_bounds_from_array geojson['coordinates']
+          bounds_for_array geojson['coordinates']
         when 'LineString'
-          calculate_bounds_from_array geojson['coordinates']
+          bounds_for_array geojson['coordinates']
         when 'MultiLineString'
-          calculate_bounds_from_array geojson['coordinates'], 1
+          bounds_for_array geojson['coordinates'], 1
         when 'Polygon'
-          calculate_bounds_from_array geojson['coordinates'], 1
+          bounds_for_array geojson['coordinates'], 1
         when 'MultiPolygon'
-          calculate_bounds_from_array geojson['coordinates'], 2
+          bounds_for_array geojson['coordinates'], 2
         when 'Feature'
-          geojson['geometry'] ? calculate_bounds(geojson['geometry']) : nil
+          geojson['geometry'] ? bounds(geojson['geometry']) : nil
         when 'FeatureCollection'
-          calculate_bounds_for_feature_collection geojson
+          bounds_for_feature_collection geojson
         when 'GeometryCollection'
-          calculate_bounds_for_geometry_collection geojson
+          bounds_for_geometry_collection geojson
         else
           raise ArgumentError.new 'unknown type: ' + geojson['type']
         end
@@ -36,10 +36,10 @@ module ArcGIS
 
       X1, Y1, X2, Y2 = 0, 1, 2, 3
 
-      def calculate_bounds_from_array array, nesting = 0, box = Array.new(4)
+      def bounds_for_array array, nesting = 0, box = Array.new(4)
         if nesting > 0
           array.reduce box do |b, a|
-            calculate_bounds_from_array a, (nesting - 1), b
+            bounds_for_array a, (nesting - 1), b
           end
         else
           array.reduce box do |b, lonlat|
@@ -52,6 +52,35 @@ module ArcGIS
             b
           end
         end
+      end
+
+      def bounds_for_feature_collection fc
+        bounds_for_collection 'features', fc {|f| f['geometry']}
+      end
+
+      def bounds_for_geometry_collection gc
+        bounds_for_collection 'geomteries', gc
+      end
+
+      def bounds_for_collection type, collection, &block
+        extents = []
+        collection[type].each do |e|
+          es = bounds (block_given? ? yield(e) : e)
+          extents << [ es[0], es[1] ]
+          extents << [ es[2], es[3] ]
+        end
+        bounds extents
+      end
+      private :bounds_for_collection
+
+      def envelope geojson
+        b = bounds geojson
+        {
+          x: b[0],
+          y: b[1],
+          w: (b[0] - b[2]).abs,
+          h: (b[1] - b[3]).abs
+        }
       end
 
     end
