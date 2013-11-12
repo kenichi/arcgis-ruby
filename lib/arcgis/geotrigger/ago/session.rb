@@ -5,7 +5,9 @@ module ArcGIS
         extend ::Forwardable
         def_delegators :@impl, :access_token, :ago_data, :device_data, :refresh_token
 
-        AGO_BASE_URL = 'https://www.arcgis.com/sharing/%s'.freeze
+        AGO_BASE_URL = (ENV.key?('AGO_BASE_URL') ?
+                        (ENV['AGO_BASE_URL'] + '%s') :
+                        'https://www.arcgis.com/sharing/%s').freeze
 
         def initialize opts = {}
           @hc = HTTPClient.new
