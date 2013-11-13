@@ -5,7 +5,9 @@ module ArcGIS
       extend Forwardable
       def_delegator :@ago, :type
 
-      BASE_URL = 'https://geotrigger.arcgis.com/%s'.freeze
+      BASE_URL = (ENV.key?('GT_BASE_URL') ?
+                 (ENV['GT_BASE_URL'] + '%s') :
+                 'https://geotrigger.arcgis.com/%s').freeze
 
       attr_writer :access_token
 

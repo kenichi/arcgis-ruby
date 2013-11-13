@@ -4,6 +4,12 @@ module ArcGIS
     class Trigger < Model
       include Taggable
 
+      def self.create session, opts
+        t = Trigger.new session: session
+        t.data = opts
+        t.post_create
+      end
+
       def initialize opts = {}
         super opts
         if opts[:trigger_id] and @data.nil?
@@ -15,15 +21,19 @@ module ArcGIS
         'trigger:%s' % triggerId
       end
 
-      def post_update
-        raise StateError.new 'not modified' unless @modified
+      def post_create
+        raise StateError if @data['triggerId']
+        post_data = @data.dup
+        @data = post 'trigger/create', post_data
+        self
+      end
 
+      def post_update
         post_data = @data.dup
         post_data['triggerIds'] = post_data.delete 'triggerId'
         post_data.delete 'tags'
 
         grok_self_from post 'trigger/update', post_data
-        @modified = false
         self
       end
       alias_method :save, :post_update

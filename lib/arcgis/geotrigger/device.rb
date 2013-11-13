@@ -12,12 +12,10 @@ module ArcGIS
       end
 
       def default_tag
-        'device:%s' % triggerId
+        'device:%s' % deviceId
       end
 
       def post_update
-        raise StateError.new 'not modified' unless @modified
-
         post_data = @data.dup
         case @session.type
         when :application
@@ -29,7 +27,6 @@ module ArcGIS
         post_data.delete 'lastSeen'
 
         grok_self_from post 'device/update', post_data
-        @modified = false
         self
       end
       alias_method :save, :post_update

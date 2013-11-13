@@ -19,10 +19,7 @@ module ArcGIS
 
       def initialize opts = {}
         @session = opts[:session] || Session.new(opts)
-        @modified = false
       end
-
-      def modified?; @modified; end
 
       def post_list models, params = {}, default_params = {}
         model = models.sub /s$/, ''
@@ -38,7 +35,6 @@ module ArcGIS
           key = meth_s.sub(/=$/,'').camelcase
           if @data and @data.key? key
             @data[key] = args[0]
-            @modified = true
           else
             super meth, *args
           end
@@ -68,21 +64,18 @@ module ArcGIS
 
         def add_tags *names
           @data['addTags'] = names.flatten
-          @modified = true
         end
 
         def remove_tags *names
           names = names.flatten
           raise ArgumentError.new "default tag prohibited" if names.include? default_tag
           @data['removeTags'] = names
-          @modified = true
         end
 
         def tags= *names
           names = names.flatten
           raise ArgumentError.new "default tag required" unless names.include? default_tag
           @data['setTags'] = names
-          @modified = true
         end
 
       end

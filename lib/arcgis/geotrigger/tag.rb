@@ -3,6 +3,12 @@ module ArcGIS
 
     class Tag < Model
 
+      def self.create session, opts
+        t = ArcGIS::GT::Tag.new session: session
+        t.data = opts
+        t.post_create
+      end
+
       def initialize opts = {}
         super opts
         if opts[:name] and @data.nil?
@@ -18,13 +24,17 @@ module ArcGIS
         post_list 'devices', params, tags: name
       end
 
+      def post_create
+        post_data = @data.dup
+        grok_self_from post('tag/permissions', post_data), @data[:tags]
+        self
+      end
+
       def post_update
-        raise StateError.new 'not modified' unless @modified
         raise StateError.new 'device access_token prohibited' if @session.device?
         post_data = @data.dup
         post_data['tags'] = post_data.delete 'name'
         grok_self_from post 'tag/permissions', post_data
-        @modified = false
         self
       end
       alias_method :save, :post_update

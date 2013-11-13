@@ -3,7 +3,7 @@ module ArcGIS
     module AGO
       class Session
         extend ::Forwardable
-        def_delegators :@impl, :access_token, :ago_data, :device_data, :refresh_token
+        def_delegators :@impl, :access_token, :access_token=, :ago_data, :device_data, :refresh_token
 
         AGO_BASE_URL = (ENV.key?('AGO_BASE_URL') ?
                         (ENV['AGO_BASE_URL'] + '%s') :
@@ -64,7 +64,9 @@ module ArcGIS
           end
 
           def access_token
-            fetch_access_token if @ago_data.nil? or Time.now >= @ago_data[:expires_at]
+            fetch_access_token if @ago_data.nil? or
+                                  (not @ago_data[:expires_at].nil? and
+                                  Time.now >= @ago_data[:expires_at])
             @ago_data['access_token']
           end
 
@@ -79,9 +81,6 @@ module ArcGIS
             end
           end
 
-          def expires_at
-          end
-
         end
 
         class Device
@@ -89,7 +88,8 @@ module ArcGIS
           extend Forwardable
           def_delegator :@session, :hc
 
-          attr_reader :ago_data, :refresh_token
+          attr_accessor :refresh_token
+          attr_reader :ago_data
 
           def initialize session, opts = {}
             @session, @client_id, @refresh_token =
@@ -103,7 +103,7 @@ module ArcGIS
               else
                 refresh_access_token
               end
-            elsif Time.now >= @ago_data[:expires_at]
+            elsif not @ago_data[:expires_at].nil? and Time.now >= @ago_data[:expires_at]
               refresh_access_token
             end
             @ago_data['access_token']
@@ -117,7 +117,7 @@ module ArcGIS
 
           def register
             wrap_token_retrieval do
-              data = hc :post, 'oauth2/registerDevice', client_id: @client_id
+              data = hc :post, 'oauth2/registerDevice', client_id: @client_id, expiration: -1
               @ago_data = {
                 'access_token' => data['deviceToken']['access_token'],
                 'expires_in' => data['deviceToken']['expires_in']
