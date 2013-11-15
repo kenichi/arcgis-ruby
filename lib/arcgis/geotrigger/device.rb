@@ -6,8 +6,15 @@ module ArcGIS
 
       def initialize opts = {}
         super opts
-        if opts[:device_id] and @data.nil?
-          grok_self_from post('device/list', deviceIds: opts[:device_id]), opts[:device_id]
+        case session.type
+        when :application
+          if opts[:device_id] and @data.nil?
+            grok_self_from post('device/list', deviceIds: opts[:device_id]), opts[:device_id]
+          end
+        when :device
+          if @data.nil?
+            grok_self_from post('device/list'), opts[:device_id] || :first
+          end
         end
       end
 
@@ -32,7 +39,11 @@ module ArcGIS
       alias_method :save, :post_update
 
       def grok_self_from data, id = nil
-        @data = data['devices'].select {|t| t['deviceId'] == (id || @data['deviceId'])}.first
+        if id == :first
+          @data = data['devices'].first
+        else
+          @data = data['devices'].select {|t| t['deviceId'] == (id || @data['deviceId'])}.first
+        end
       end
 
     end
